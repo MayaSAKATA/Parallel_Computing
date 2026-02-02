@@ -1,92 +1,110 @@
 import numpy as np
+import time
 from galaxy_generator import generate_star_color
+from visualizer3d_vbo import Visualizer3D
 
+G = 1.560339e-13 # Gravitationnal constant
 class Body:
-    def __init__(self, mass, position, speed):
+    def __init__(self, mass, position, velocity):
         self.mass = mass
-        self.position = position
-        self.speed = speed
+        self.position = np.array(position, dtype=np.float64)
+        self.velocity = np.array(velocity, dtype=np.float64)
         self.color = generate_star_color(mass)
 
     def __str__(self):
-        return f"Mass: {self.mass}, Position: {self.position}, Speed: {self.speed}, Color: {self.color}"
-
-    def update(self, dt):
-        acceleration = NBodies.get_attraction(self)/self.mass
-        self.speed = (self.speed[0] + acceleration[0] * dt, self.speed[1] + acceleration[1] * dt, self.speed[2] + acceleration[2] * dt)
-        self.position = (self.position[0] + self.speed[0] * dt + 1/2*dt**2*acceleration[0], self.position[1] + self.speed[1] * dt + 1/2*dt**2*acceleration[1], self.position[2] + self.speed[2] * dt + 1/2*dt**2*acceleration[2])
+        return f"Mass: {self.mass}, Position: {self.position}, Velocity: {self.velocity}, Color: {self.color}"
     
     def distance(self, other):
-        return np.linalg.norm(np.array(self.position) - np.array(other.position))
+        diff = self.position - other.position
+        return np.linalg.norm(diff)
+    
+    def update(self, acceleration, dt):
+        """
+        Updates position and velocity using the provided formulas:
+        p(t+dt) = p(t) + dt*v(t) + 0.5 * dt^2 * a(t)
+        v(t+dt) = v(t) + dt * a(t)
+        """
+        self.velocity += acceleration * dt
+        self.position += self.velocity * dt + 0.5 * acceleration * dt**2
     
 class NBodies:
 
-    def __init__(self, filename):
+    def __init__(self, bodies_list):
         """
         Initialize a system of bodies from a file containing their properties (mass, positionx, positiony, positionz, speedx, speedy, speedz).
         """
-        list_bodies = []
-        with open(filename, 'r') as file:
-            for line in file:
-                data = line.split()
-                mass = float(data[0])
-                position = (float(data[1]), float(data[2]), float(data[3]))
-                speed = (float(data[4]), float(data[5]), float(data[6]))
-                body = Body(mass, position, speed)
-                list_bodies.append(body)
+        self.collection = bodies_list
 
-        global G # Gravitationnal constant
-        G = 1.560339e-13
-        self.collection = list_bodies
-        self.attraction = 0
-        for body in self.collection:
-            if body != self:
-                self.attraction += G*self.mass*body.mass/np.linalg.norm(body.position - self.position )**3*(body.position - self.position)
-    
-    def get_attraction(self):
+    def calculate_accelerations(self, body_i):
         """
-        Returns the total gravitational attraction on this body.
+        Calculate the gravitational accelerations on each body due to all other bodies.
         """
-        return self.attraction
+        total_acc = np.zeros(3)
+        
+        for body_j in self.collection:
+            if body_j is not body_i: # i != j
+                dist = body_j.distance(body_i)
+                if dist > 0:
+                    diff = body_j.position - body_i.position
+                    total_acc += G * body_j.mass * diff / (dist**3)
+                
+        return total_acc
+
+    def step(self, dt):
+        """
+        Performs one complete simulation step.
+        """
+        accelerations = []
+        for b in self.collection:
+            accelerations.append(self.calculate_accelerations(b))
+            
+        for i, b in enumerate(self.collection):
+            b.update(accelerations[i], dt)
     
-    system = None
-    def update_positions(dt):
+    def update_positions(self, dt):
         """
         Updates the positions of all bodies in the system after a time step dt.
         """
-        global system
-        system.update_positions(dt)
-        return [body.position for body in system.collection]
+        accelerations = [self.calculate_accelerations(b) for b in self.collection]
+        for i, body in enumerate(self.collection):
+            body.update(accelerations[i], dt)
+        return [body.position for body in self.collection]
 
-def main():
-    """
-    Fonction principale pour tester le générateur de galaxie.
-    """
-    import sys
-    
-    # Default parameters
-    n_stars = 100
-    output_file = "data/galaxy_100"
-    
-    # Read command line arguments
-    if len(sys.argv) > 1:
-        n_stars = int(sys.argv[1])
-    if len(sys.argv) > 2:
-        output_file = sys.argv[2]
-    
-    # Galaxy generation
-    masses, positions, velocities, colors = generate_galaxy(
-        n_stars=n_stars,
-        output_file=output_file
-    )
-    
-    print(f"\nStatistiques de la galaxie:")
-    print(f"  - Nombre total d'objets: {len(masses)}")
-    print(f"  - Nombre d'étoiles: {n_stars}")
-    print(f"  - Masse totale: {sum(masses):.2e} masses solaires")
-    print(f"  - Masse moyenne des étoiles: {np.mean(masses[1:]):.2f} masses solaires")
-    print(f"  - Distance min/max: {min(np.linalg.norm(p) for p in positions[1:]):.4f} / {max(np.linalg.norm(p) for p in positions[1:]):.4f} années-lumière")
-
+def load_galaxy(filename):
+        """
+        Load a system of bodies from a file.
+        """
+        bodies = []
+        with open(filename, 'r') as file:
+            for line in file:
+                data = list(map(float, line.split()))
+                mass = data[0]
+                position = data[1:4]
+                speed = data[4:7]
+                body = Body(mass, position, speed)
+                bodies.append(body)
+        return bodies
 
 if __name__ == "__main__":
-    main()
+
+    galaxy = load_galaxy("data/galaxy_100")
+    system = NBodies(galaxy)
+
+    if system:
+        dt = 0.01  # Time step in years
+        
+        start_time = time.time()
+        for _ in range(10):
+            system.step(dt)
+        end_time = time.time()
+        
+        print(f"Time for 10 steps ({len(system.collection)} bodies): {end_time - start_time:.4f} seconds")
+    
+    # Visualization
+    points = np.array([body.position for body in system.collection])
+    colors = np.array([body.color for body in system.collection])
+    luminosities = np.ones(len(system.collection), dtype=np.float32)
+    bounds = ((-3, 3), (-3, 3), (-3, 3))
+
+    visualizer = Visualizer3D(points, colors, luminosities, bounds)
+    visualizer.run(updater=system.update_positions, dt=0.1)
