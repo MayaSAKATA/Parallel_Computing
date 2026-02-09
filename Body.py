@@ -2,6 +2,7 @@ import numpy as np
 import time
 from galaxy_generator import generate_star_color
 from visualizer3d_vbo import Visualizer3D
+import sys
 
 G = 1.560339e-13 # Gravitationnal constant
 class Body:
@@ -24,8 +25,8 @@ class Body:
         p(t+dt) = p(t) + dt*v(t) + 0.5 * dt^2 * a(t)
         v(t+dt) = v(t) + dt * a(t)
         """
-        self.velocity += acceleration * dt
         self.position += self.velocity * dt + 0.5 * acceleration * dt**2
+        self.velocity += acceleration * dt
     
 class NBodies:
 
@@ -44,7 +45,7 @@ class NBodies:
         for body_j in self.collection:
             if body_j is not body_i: # i != j
                 dist = body_j.distance(body_i)
-                if dist > 0:
+                if dist > 1e-10:
                     diff = body_j.position - body_i.position
                     total_acc += G * body_j.mass * diff / (dist**3)
                 
@@ -54,25 +55,14 @@ class NBodies:
         """
         Performs one complete simulation step.
         """
-        accelerations = []
         for b in self.collection:
-            accelerations.append(self.calculate_accelerations(b))
-            
-        for i, b in enumerate(self.collection):
-            b.update(accelerations[i], dt)
-    
-    def update_positions(self, dt):
-        """
-        Updates the positions of all bodies in the system after a time step dt.
-        """
-        accelerations = [self.calculate_accelerations(b) for b in self.collection]
-        for i, body in enumerate(self.collection):
-            body.update(accelerations[i], dt)
+            accel = self.calculate_accelerations(b)
+            b.update(accel, dt)
         return [body.position for body in self.collection]
 
 def load_galaxy(filename):
         """
-        Load a system of bodies from a file.
+        Load a system of bodies from a file like (mass, positionx, positiony, positionz, speedx, speedy, speedz)
         """
         bodies = []
         with open(filename, 'r') as file:
@@ -87,11 +77,14 @@ def load_galaxy(filename):
 
 if __name__ == "__main__":
 
-    galaxy = load_galaxy("data/galaxy_100")
+    galaxy = load_galaxy("data/galaxy_{}".format(sys.argv[2] if len(sys.argv) > 2 else "100"))
     system = NBodies(galaxy)
 
     if system:
-        dt = 0.01  # Time step in years
+        if len(sys.argv) > 1:
+            dt = float(sys.argv[1])
+        else :
+            dt = 1e-2  # Time step in years
         
         start_time = time.time()
         for _ in range(10):
@@ -107,4 +100,4 @@ if __name__ == "__main__":
     bounds = ((-3, 3), (-3, 3), (-3, 3))
 
     visualizer = Visualizer3D(points, colors, luminosities, bounds)
-    visualizer.run(updater=system.update_positions, dt=0.1)
+    visualizer.run(updater=system.step, dt=dt)
