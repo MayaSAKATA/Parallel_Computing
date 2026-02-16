@@ -34,9 +34,8 @@ def calculate_acceleration(position, mass):
     diff = position[np.newaxis, :, :] - position[:, np.newaxis, :] # diff[i,j] = position[j] - position[i]
     dist = np.linalg.norm(diff, axis=2) # dist[i,j] = ||position[j] - position[i]||
 
-    dist_safe = np.where(dist > 1e-10, dist, 1.0) # Avoid division by zero
-    grav_factor = G * mass / (dist_safe**3) # Calcul du facteur gravitationnel: G * m_j / r_ij^3
-
+    grav_factor = np.where(dist > 1e-10, G * mass / (dist**3), 0.0) # Calcul du facteur gravitationnel: G * m_j / r_ij^3
+    
     np.fill_diagonal(grav_factor, 0.0) # avoid i == j case
     total_acc = np.sum(grav_factor[:, :, np.newaxis] * diff, axis=1)
 
