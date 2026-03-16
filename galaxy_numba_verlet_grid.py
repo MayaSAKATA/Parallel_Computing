@@ -60,8 +60,6 @@ def calculate_acceleration(position, mass):
         s = grid[key]
         dist = distance.euclidean(center_gravity(position[indices], mass[indices]), s)
 
-
-
     n = position.shape[0]
     accelerations = np.zeros((n, 3), dtype=np.float64) 
 
@@ -120,7 +118,6 @@ if __name__ == "__main__":
     position, velocity, mass, color  = load_galaxy("data/galaxy_{}".format(sys.argv[2] if len(sys.argv) > 2 else "100"))
     
     square_size, radius = initialize_grid(position)
-
 
     print(f"position shape: {position.shape}")
 
