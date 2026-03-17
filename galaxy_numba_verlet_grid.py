@@ -22,11 +22,11 @@ def grid_matrice_crs(position):
     for i in range(len(position[0])): 
         indice_colonne = min(int(position[i][0]/square_size[0]),19) #min pour eviter les erreurs d'indice si une etoile se trouve a la limite de la grille
         indice_ligne = min(int(position[i][1]/square_size[1]),19)
-        place = indice_ligne*20 + indice_colonne #sligne_indice*20 pour compter le nombre de cases dans les lignes au dessus et + indice_colonne pour decaler l'etoile dans la bonne colonne de la ligne 
+        place = indice_ligne*20 + indice_colonne #ligne_indice*20 pour compter le nombre de cases dans les lignes au dessus et + indice_colonne pour decaler l'etoile dans la bonne colonne de la ligne 
         aux[place] += 1
 
         beg_cases = np.cumsum(aux)
-        
+
     aux2 : np.empty(400) 
     tab = np.empty(len(position[0]))
     for i in range(len(position[0])): 
