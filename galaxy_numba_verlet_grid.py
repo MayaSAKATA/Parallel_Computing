@@ -11,35 +11,46 @@ G = 1.560339e-13 # Gravitationnal constant
 
 def grid_matrice_crs(position): 
     """
-    objectif : avoir 2 listes : une qui compte le combre d'etoiles qu'il y a dans les cases d'avant pour chaque case 
-    une qui organise les etoiles dans l'ordre des cases
-    position est la liste des positions des etoiles, position [0][id] est la position_x de l'etoile id 
+    oal: Generate two lists: 
+    1. One that stores the cumulative star counts (offsets) for each grid cell.
+    2. One that stores the star IDs sorted by their grid cell order.
+    
+    'position' is a list of star coordinates, where position[id][0] is the x-coordinate of star 'id'.
 
     """
 
-    aux = np.empty(400) #20x20=400 cases 
-    beg_cases = np.empty(400) #20x20=400 cases
-    for i in range(len(position[0])): 
-        indice_colonne = min(int(position[i][0]/square_size[0]),19) #min pour eviter les erreurs d'indice si une etoile se trouve a la limite de la grille
+    global square_size
+
+    aux = np.zeros(400, dtype=int) #Counts the number of stars in each cell (20x20 = 400 cells) 
+    beg_cases = np.zeros(401, dtype=int) #Stores the starting index of each cell in the 'tab' array
+    for i in range(len(position)): 
+        #min() prevents index errors if a star is exactly on the grid boundary
+        indice_colonne = min(int(position[i][0]/square_size[0]),19) 
         indice_ligne = min(int(position[i][1]/square_size[1]),19)
-        place = indice_ligne*20 + indice_colonne #ligne_indice*20 pour compter le nombre de cases dans les lignes au dessus et + indice_colonne pour decaler l'etoile dans la bonne colonne de la ligne 
+        place = indice_ligne*20 + indice_colonne 
         aux[place] += 1
 
-        beg_cases = np.cumsum(aux)
+    # beg_cases[0] = 0
+    # beg_cases[1] = number of stars in cell 0
+    # beg_cases[2] = total stars in cells 0 and 1...
+    beg_cases[1:] = np.cumsum(aux) 
 
-    aux2 : np.empty(400) 
-    tab = np.empty(len(position[0]))
-    for i in range(len(position[0])): 
+    aux2 = np.zeros(400, dtype=int) 
+    #Stores star IDs sorted by grid cell order
+    tab = np.zeros(len(position), dtype=int)
+    for i in range(len(position)): 
         indice_colonne = min(int(position[i][0]/square_size[0]),19)
         indice_ligne = min(int(position[i][1]/square_size[1]),19)
         place = indice_ligne*20 + indice_colonne
         if place == 0 : 
             place_finale = aux2[place]
         else : 
-            place_finale = aux2[place] + beg_cases[place-1]
-        tab[place_finale] = i
+            place_finale = aux2[place] + beg_cases[place]
+        tab[place_finale] = i 
         aux2[place] += 1
-    return beg_cases, tab 
+
+
+    return beg_cases, tab
 
 
 def initialize_grid(position):
