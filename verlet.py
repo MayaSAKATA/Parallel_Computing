@@ -17,8 +17,12 @@ def initialize_grid(positions):
     size_y = positions[:, 1].max() - positions[:, 1].min()
     size_z = positions[:, 2].max() - positions[:, 2].min()
 
-    square_size = np.array([size_x, size_y, size_z]) * 1.05 / 20
-    radius = np.sqrt(size_x**2 + size_y**2 + size_z**2)
+    dx = size_x / 20
+    dy = size_y / 20
+    dz = size_z / 20
+
+    square_size = np.array([dx, dy, dz]) * 1.05 # Add a 5% margin to ensure stars on the edge stay within bounds
+    radius = np.sqrt(dx**2 + dy**2 + dz**2)
     return square_size, radius
 
 
