@@ -11,16 +11,15 @@ def initialize_grid(positions):
     """
     Initialize square_size, radius and min coordinates from the current positions.
     """
-    global square_size, radius, min_x, min_y
 
     min_x  = np.min(positions[:, 0])
     min_y  = np.min(positions[:, 1])
-    size_x = np.max(positions[:, 0]) - min_x
-    size_y = np.max(positions[:, 1]) - min_y
-    size_z = np.max(positions[:, 2]) - np.min(positions[:, 2])
-
-    square_size = np.array([size_x, size_y, size_z], dtype=np.float64) * 1.05 / 20
-    radius = np.sqrt(size_x**2 + size_y**2 + size_z**2)
+    size_x = (np.max(positions[:, 0]) - min_x)*1.05 # Add a 5% margin to ensure stars on the edge stay within bounds
+    size_y = (np.max(positions[:, 1]) - min_y)*1.05
+    dx = size_x / 20
+    dy = size_y / 20
+    square_size = np.array([dx, dy], dtype=np.float64)
+    radius = np.sqrt(dx**2 + dy**2) # radius for the Barnes-Hut criteria is the diagonal of a single cell
 
     return square_size, radius, min_x, min_y
 
@@ -28,12 +27,12 @@ def initialize_grid(positions):
 @numba.njit
 def grid_matrice_crs(positions, square_size, min_x, min_y):
     """
+    Organize stars into a grid using Compressed Sparse Row (CSR) logic.
     The goal is to generate two lists: 
-    1. One that stores the cumulative star counts (offsets) for each grid cell.
-    2. One that stores the star IDs sorted by their grid cell order.
+    1. beg_cases : stores the cumulative star counts (offsets) for each grid cell.
+    2. tab : stores the star IDs sorted by their grid cell order.
     
-    'position' is a list of star coordinates, where position[id][0] is the x-coordinate of star 'id'.
-
+    'positions' is a list of star coordinates, where positions[id][0] is the x-coordinate of star 'id'.
     """
     n = len(positions)
     aux = np.zeros(400, dtype=numba.int64) # Counts the number of stars in each cell (20x20 = 400 cells) 
@@ -45,7 +44,6 @@ def grid_matrice_crs(positions, square_size, min_x, min_y):
         ligne = min(int((positions[i][1] - min_y) / square_size[1]), 19)
         aux[ligne * 20 + col] += 1
 
-    
     beg_cases[1:] = np.cumsum(aux) # beg_cases[0] = 0, beg_cases[1] = number of stars in cell 0, beg_cases[2] = total stars in cells 0 and 1...
 
     # Stores star IDs sorted by grid cell order
@@ -66,7 +64,7 @@ def grid_matrice_crs(positions, square_size, min_x, min_y):
 def cell_center_of_mass(positions, mass, beg_cases, tab, cell):
     """
     Compute the center of mass and total mass of all stars in a given cell.
-    Formula : Center_of_mass = (\sum_j m_j * x_j)  (\sum m_j)
+    Formula: Center_of_mass = (sum_j m_j * x_j) / (sum m_j)
     """
     cx, cy, cz = 0.0, 0.0, 0.0
     total_mass = 0.0
@@ -86,9 +84,9 @@ def cell_center_of_mass(positions, mass, beg_cases, tab, cell):
 @numba.njit(parallel=True)
 def calculate_acceleration(positions, mass, square_size, radius, min_x, min_y):
     """
-    Gravitational accelerations with a Barnes-Hut-like approximation:
-      - if a cell is far (0.5 * dist_to_cell_center > radius) -> use its center of mass
-      - otherwise -> sum over individual stars in the cell
+    Compute gravitational acceleration using a Barnes-Hut-like approximation.
+    If a cell is distant (0.5 * dist > radius), use its center of mass.
+    Otherwise, compute particle-to-particle interactions within the cell.
     """
     beg_cases, tab = grid_matrice_crs(positions, square_size, min_x, min_y)
 
@@ -110,14 +108,14 @@ def calculate_acceleration(positions, mass, square_size, radius, min_x, min_y):
             dy = cy - positions[i][1]
             dz = cz - positions[i][2]
             dist = np.sqrt(dx*dx + dy*dy + dz*dz)
-
             if dist < 1e-10:
                 continue
 
             if 0.5 * dist > radius: # Far cell : treat as a single body at its center of mass
-                acc[0] += G * total_mass * dx / (dist**3)
-                acc[1] += G * total_mass * dy / (dist**3)
-                acc[2] += G * total_mass * dz / (dist**3)
+                dist3 = dist**3
+                acc[0] += G * total_mass * dx / dist3
+                acc[1] += G * total_mass * dy / dist3
+                acc[2] += G * total_mass * dz / dist3
 
             else: # Near cell : sum over individual stars
                 for k in range(beg_cases[cell], beg_cases[cell + 1]):
@@ -129,9 +127,10 @@ def calculate_acceleration(positions, mass, square_size, radius, min_x, min_y):
                     dz = positions[j][2] - positions[i][2]
                     dist = np.sqrt(dx*dx + dy*dy + dz*dz)
                     if dist > 1e-10:
-                        acc[0] += G * mass[j] * dx / (dist**3)
-                        acc[1] += G * mass[j] * dy / (dist**3)
-                        acc[2] += G * mass[j] * dz / (dist**3)
+                        dist3 = dist**3
+                        acc[0] += G * mass[j] * dx / dist3
+                        acc[1] += G * mass[j] * dy / dist3
+                        acc[2] += G * mass[j] * dz / dist3
 
         accelerations[i] = acc
 
@@ -142,8 +141,9 @@ def step(dt):
     """
     Updates the all the positions in the system after a time step dt using the Verlet integration method.
     """
-    global positions, velocity, mass, square_size, radius, min_x, min_y
+    global positions, velocity, mass
 
+    square_size, radius, min_x, min_y = initialize_grid(positions) # Update grid based on current positions
     acc = calculate_acceleration(positions, mass, square_size, radius, min_x, min_y)
 
     new_pos = positions + velocity * dt + 0.5 * acc * dt**2
