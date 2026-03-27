@@ -1,5 +1,8 @@
 # Projet Python : génération d'une galaxie
 
+Pour exécuter les codes, on tape la commande : *python&nbsp;&nbsp;&nbsp;nom_du_fichier&nbsp;&nbsp;pas_de_temps&nbsp;&nbsp;taille_galaxie*.  
+Par défaut *pas_de_temps = 1e-2* et *taille_galaxie = 100*.
+
 ## Première version : programmation naïve
 
 Dans cette première version, on utilise une approche objet avec la définition des classes *Corps* et *NCorps*. La classe *Corps* correspond à une étoile, caractérisée par sa masse, sa couleur, sa position et sa vitesse. La classe *NCorps* correspond elle à une collection d'objets de type Corps.  
