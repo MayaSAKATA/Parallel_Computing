@@ -47,7 +47,6 @@ class NBodies:
         accelerations = np.zeros((num_bodies, 3))
 
         for i in range(num_bodies):
-            #diff = positions[i] - positions
             diff = positions - positions[i]
 
             diff[i] = 0

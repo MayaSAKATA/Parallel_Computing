@@ -60,7 +60,7 @@ def step(dt):
     global position, velocity, mass
     accel = calculate_acceleration(position, mass)
     new_position, new_velocity = update(accel, velocity, dt)
-    # upater doesn't edit variables, returns new values
+    # updater doesn't edit variables, returns new values
     position = new_position
     velocity = new_velocity
     return position

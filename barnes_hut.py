@@ -45,8 +45,6 @@ def grid_matrice_crs(positions, square_size, min_x, min_y):
         ligne = min(int((positions[i][1] - min_y) / square_size[1]), 19)
         aux[ligne * 20 + col] += 1
 
-    # for k in range(400):
-    #     beg_cases[k + 1] = beg_cases[k] + aux[k]
     
     beg_cases[1:] = np.cumsum(aux) # beg_cases[0] = 0, beg_cases[1] = number of stars in cell 0, beg_cases[2] = total stars in cells 0 and 1...
 
@@ -142,7 +140,7 @@ def calculate_acceleration(positions, mass, square_size, radius, min_x, min_y):
 
 def step(dt):
     """
-    Updates the all the positions in the system after a time step dt.
+    Updates the all the positions in the system after a time step dt using the Verlet integration method.
     """
     global positions, velocity, mass, square_size, radius, min_x, min_y
 
