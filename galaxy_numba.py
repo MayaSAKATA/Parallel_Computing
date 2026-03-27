@@ -1,8 +1,5 @@
-from operator import pos
 import numpy as np
-from scipy.spatial import distance_matrix
 import time
-from galaxy_body import load_galaxy
 from galaxy_generator import generate_star_color
 from visualizer3d_vbo import Visualizer3D
 import sys

@@ -59,24 +59,24 @@ class NBodies:
     
     def update_position(self, dt):
         # step 1
-        a1 = self.calculate_acceleration(self.positions, self.masses)
         v1 = self.velocities
         p1 = self.positions
+        a1 = self.calculate_acceleration(p1, self.masses)
 
         # step 2
-        a2 = self.calculate_acceleration(p1 + 0.5 * v1 * dt, self.masses)
         v2 = v1 + 0.5 * a1 * dt
         p2 = p1 + 0.5 * v1 * dt
+        a2 = self.calculate_acceleration(p2, self.masses)
 
         # step 3
-        a3 = self.calculate_acceleration(p2 + 0.5 * v2 * dt, self.masses)
         v3 = v1 + 0.5 * a2 * dt
         p3 = p1 + 0.5 * v2 * dt
+        a3 = self.calculate_acceleration(p3, self.masses)
 
         # step 4
-        a4 = self.calculate_acceleration(p3 + v3 * dt, self.masses)
         v4 = v1 + a3 * dt
         p4 = p1 + v3 * dt
+        a4 = self.calculate_acceleration(p4, self.masses)
 
         # update position and velocity
         self.positions += (dt / 6) * (v1 + 2*v2 + 2*v3 + v4)

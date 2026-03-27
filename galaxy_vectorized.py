@@ -1,7 +1,5 @@
 import numpy as np
-from scipy.spatial import distance_matrix
 import time
-from galaxy_body import load_galaxy
 from galaxy_generator import generate_star_color
 from visualizer3d_vbo import Visualizer3D
 import sys
@@ -41,7 +39,7 @@ def calculate_acceleration(position, mass):
 
     return total_acc
 
-def update(acceleration, velocity, dt):
+def update(acceleration, velocity, position, dt):
     """
     Updates position and velocity using the provided formulas:
     p(t+dt) = p(t) + dt*v(t) + 0.5 * dt^2 * a(t)
@@ -59,7 +57,7 @@ def step(dt):
     """
     global position, velocity, mass
     accel = calculate_acceleration(position, mass)
-    new_position, new_velocity = update(accel, velocity, dt)
+    new_position, new_velocity = update(accel, velocity, position, dt)
     # updater doesn't edit variables, returns new values
     position = new_position
     velocity = new_velocity

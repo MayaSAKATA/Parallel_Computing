@@ -7,7 +7,6 @@ import sys
 
 G = 1.560339e-13  # Gravitationnal constant
 
-
 def initialize_grid(positions):
     """
     Initialize the global variable square_size and radius of the square
@@ -66,27 +65,28 @@ def calculate_acceleration(positions, mass):
 
     n = len(positions)
     accelerations = np.zeros((n, 3))
-
-    # Compute once
     grid = assign_to_grid(positions)
-    cg, total_mass = center_gravity(positions, mass)
+
+    # Calculate each cell data once
+    cell_data = {}
+    for key, indices in grid.items():
+        cg, total_mass = center_gravity(positions[indices], mass[indices])
+        cell_data[key] = (cg, total_mass)
 
     for i in range(n):
         acc = np.zeros(3)
+        pos_i = positions[i]
 
-        for key, indices in grid.items():
-            # Distance betwen center of mass and cell
-            dist = distance.euclidean(cg, positions[i])
+        for key, (cg_cell, m_cell) in cell_data.items():
+            diff = cg_cell - pos_i
+            dist = np.linalg.norm(diff)
 
-            # Barnes-Hut approximation 
+            if dist < 1e-10:
+                  continue
             if 0.5 * dist > radius :
-                diff = cg - positions[i]
-                d = np.linalg.norm(diff)
-                if d > 1e-10:
-                    acc += G * total_mass * diff / (d**3)
-
+                acc += G * m_cell * diff / (dist**3)
             else:
-                for j in indices:
+                for j in grid[key]:
                     if i == j:
                         continue
                     diff = positions[j] - positions[i]

@@ -56,9 +56,14 @@ class NBodies:
         """
         Performs one complete simulation step.
         """
+        accels = []
         for b in self.collection:
-            accel = self.calculate_accelerations(b)
-            b.update(accel, dt)
+            a = self.calculate_accelerations(b)
+            accels.append(a)
+        for i in range(len(self.collection)):
+            body = self.collection[i]
+            acc = accels[i]
+            body.update(acc, dt)                                                                                                             
         return [body.position for body in self.collection]
 
 def load_galaxy(filename):
