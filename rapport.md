@@ -19,8 +19,8 @@ Temps de calcul et nombre de frame par seconde en fonction du nombre de corps :
 
 | Nombre de corps | 100 | 500 | 1000 | 2500 |
 | --- | --- | --- | --- | --- |
-| Temps de calcul | 1.42 s | 36.39 s | 143.05 s | 914.91 s |
-| Nombre de frame par seconde | 5.63 | 0.27 | 0.07 | 0.01 |
+| Temps de calcul | 1.52 s | 36.10 s | 151.21 s | 901.67 s |
+| Nombre de frame par seconde | 5.4 | 0.2 | 0.06 | 0.01 |
 
 ## Deuxième version : vectorisation
 
@@ -76,8 +76,8 @@ Temps de calcul et nombre de frame par seconde en fonction du nombre de corps :
 
 | Nombre de corps | 100 | 500 | 1000 | 2500 |
 | --- | --- | --- | --- | ---- |
-| Temps de calcul | 0.2588 s | 2.5102 s | 8.0517 s | 43.5475 s |
-| Nombre de frame par secondes | 15 | 3.3 | 1.2 | 0.22 |
+| Temps de calcul | 0.26 s | 2.48 s | 8.11 s | 43.24 s |
+| Nombre de frame par secondes | 36.5 | 3.8 | 1.2 | 0.2 |
 
 Les temps de calculs sont réduits par rapport à la version avec Euler, cependant cette méthode ne conserve pas l'énergie du système. Les étoiles peuvent donc parfois prendre des trajectoire inattendues.
 
