@@ -68,7 +68,7 @@ Pour 4 coeurs seulement, il y a déjà une réduction importante du temps de cal
 
 Lorsqu'on essaye différents pas de temps, on remarque que pour les pas de temps trop grands (0.1 par exemple), la simulation est instable (certaines planètes sortent complètement de la galaxie). Pour des pas de temps plus petits, on obtient des résultats plus cohérents : les mouvements sont stables et les orbites plus réalistes. Cette différence s'explique par le fait que la méthode d'Euler est instable pour des pas de temps trop grand, l'erreur locale s'accumule à chaque itération ce qui rend la simulation fausse physiquement.
 
-## Quatrième veersion : Rung-Kutta ordre 4 (RK4)
+## Quatrième veersion : Runge-Kutta ordre 4 (RK4)
 
 On essaye une version qui remplace la méthode d'Euler pour la mise à jour des vitesse et des positions par la méthode RK4.
 
